@@ -1,59 +1,85 @@
 # Deck
 
-A fast, local-first personal work tracker for engineers juggling many things at once — features, bugs, on-call issues, and **lots of pull requests across many repos**.
+**A fast, local kanban board for engineers who juggle lots of pull requests.**
 
-Deck pulls the state of your GitHub PRs (via the `gh` CLI — no tokens to manage) and shows everything on one board: what's in review, what's merged, what has **merge conflicts** or **unresolved review comments**, and which multi-PR initiatives (base + stacked + docs) still need work.
+Deck runs entirely on your machine. It tracks your features, bugs, and tasks on one board — and it talks to GitHub to show the *live state* of every PR you've linked: merged or open, failing checks, merge conflicts, unresolved review comments.
 
-> Runs entirely on your machine against a local SQLite file. Single user, no account, no cloud.
+No account. No cloud. No tokens to manage. Just a local app and your existing `gh` login.
 
-## Features
+![Deck board](docs/screenshots/board-dark.png)
 
-- **Kanban board** — To do / In progress / In review / Blocked / Done, live-updating.
-- **Multi-PR initiatives** — group base / stacked / docs PRs under one task, with merge-order badges, target branches, per-PR state, and a progress track (`3 / 9 PRs merged`).
-- **PR insight from GitHub** — conflict tags, review-comment counts, and "N unresolved" review-thread badges, refreshed by sync.
-- **Any source per task** — GitHub PRs, Slack threads, DevRev items, or plain URLs, all one click away.
-- **`gh`-powered sync** — a Sync button plus auto-sync keep PR states current. No tokens; it uses your existing `gh` auth.
-- **Drag-and-drop, ⌘K command palette, inline editing + notes** — keyboard-first, fluid editing.
-- **Light and dark themes.**
-- **Manual status is protected** — move a card by hand and sync won't override it.
+## What it does
 
-## Tech stack
+**Everything on one board.** Five columns — To do, In progress, In review, Blocked, Done. Drag cards between them. Each card shows its PRs, how many are merged, and a progress bar.
 
-- [Next.js](https://nextjs.org) (App Router) + React + TypeScript
-- [Drizzle ORM](https://orm.drizzle.team) over [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) (local `deck.db`)
-- [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com)
-- [SWR](https://swr.vercel.app) for data + polling, [dnd-kit](https://dndkit.com), [cmdk](https://cmdk.paco.me), next-themes
+**Live PR status from GitHub.** Hit sync (or let auto-sync do it) and every linked PR updates: state, failing checks, conflicts, and unresolved review threads. Cards that need your attention get flagged.
 
-## Getting started
+**Big work, many PRs.** One task can hold a whole initiative — a base PR, stacked PRs on top of it, and a docs PR — each with its own target branch, review state, and merge order:
 
-**Prerequisites:** Node 20+, and the [GitHub CLI](https://cli.github.com) authenticated (`gh auth login`) for PR sync.
+![Task detail with stacked PRs](docs/screenshots/detail-sheet.png)
+
+**Keyboard-first.** Press `⌘K` for the command palette — search tasks, sync, switch themes, jump anywhere:
+
+![Command palette](docs/screenshots/command-palette.png)
+
+**Light mode too** (plus Midnight, Dracula, and Rosé Pine):
+
+![Light theme](docs/screenshots/board-light.png)
+
+A few more nice things:
+
+- Paste any link on a card — a GitHub PR, a Slack thread, a ticket, any URL.
+- Move a card by hand and sync **won't** override your choice.
+- Re-run failing GitHub Actions jobs and read their logs without leaving the board.
+- Your data is one SQLite file (`deck.db`) sitting next to the code. Back it up by copying it.
+
+## Set it up locally
+
+You need two things:
+
+1. **Node.js 20 or newer** — [download here](https://nodejs.org)
+2. **GitHub CLI** (only needed for PR sync) — [install here](https://cli.github.com), then log in once with:
 
 ```bash
-git clone <your-fork-url> deck
-cd deck
+gh auth login
+```
+
+Then run:
+
+```bash
+git clone https://github.com/abhilashdvs/deck-next.git
+cd deck-next
 npm install
 npm run dev
 ```
 
-Open **http://localhost:3000**. Your data lives in a local `deck.db` file (git-ignored).
+Open **http://localhost:3000** — that's it. Click **+ new** to add your first task, then paste a PR URL into it.
 
-### Scripts
+> Don't use GitHub, or not logged into `gh`? Everything still works — you just won't get live PR status.
+
+### Optional: PR shorthand
+
+Typing a full PR URL works everywhere. If you want the short form too (`myrepo#123`), tell Deck which GitHub org/user to assume by creating a `.env.local` file:
+
+```bash
+echo 'NEXT_PUBLIC_GITHUB_ORG=your-github-org' > .env.local
+```
+
+## Everyday commands
 
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Start the app at `localhost:3000` |
+| `npm test` | Run the test suite |
 | `npm run build` | Production build |
-| `npm test` | Run the Vitest suite |
 
-## How sync works
+## How sync works (30 seconds)
 
-Deck shells out to your local `gh` for each linked PR (`gh pr view … --json state,mergeable,comments,reviews` + a GraphQL call for unresolved threads), normalizes the result, and upserts it — updating PR **state, conflicts, and comment counts** while never disturbing the base/stacked/docs structure you set. There are no API tokens in the app.
+When you sync, Deck asks your local `gh` CLI about each linked PR — state, checks, conflicts, review comments — plus one GraphQL call for unresolved review threads. Results are saved into `deck.db` and the board updates. Deck never stores a GitHub token; it simply uses the `gh` login you already have.
 
-## Roadmap
+## Tech stack
 
-- **Now:** feature-complete local board (above).
-- **Next:** tags + saved views, activity timeline, reminders / stale-item nudges.
-- **Later:** an optional hosted, multi-user mode (Drizzle makes SQLite → Postgres a driver swap).
+[Next.js](https://nextjs.org) · React · TypeScript · [Drizzle ORM](https://orm.drizzle.team) over SQLite ([better-sqlite3](https://github.com/WiseLibs/better-sqlite3)) · [Tailwind CSS](https://tailwindcss.com) · [shadcn/ui](https://ui.shadcn.com) · [SWR](https://swr.vercel.app) · [dnd-kit](https://dndkit.com) · [cmdk](https://cmdk.paco.me)
 
 ## License
 
