@@ -4,7 +4,7 @@
 
 Deck runs entirely on your machine. It tracks your features, bugs, and tasks on one board — and it talks to GitHub to show the *live state* of every PR you've linked: merged or open, failing checks, merge conflicts, unresolved review comments.
 
-No account. No cloud. No tokens to manage. Just a local app and your existing `gh` login.
+No account. No cloud. Just a local app and your GitHub (via `gh` or a token).
 
 ![Deck board](docs/screenshots/board-dark.png)
 
@@ -13,6 +13,8 @@ No account. No cloud. No tokens to manage. Just a local app and your existing `g
 **Everything on one board.** Five columns — To do, In progress, In review, Blocked, Done. Drag cards between them. Each card shows its PRs, how many are merged, and a progress bar.
 
 **Live PR status from GitHub.** Hit sync (or let auto-sync do it) and every linked PR updates: state, failing checks, conflicts, and unresolved review threads. Cards that need your attention get flagged.
+
+**All your PRs in one inbox.** The **PRs** tab pulls every open PR you authored or are reviewing, across every repo — sorted by what needs you first (failing checks, conflicts, changes requested → waiting on CI or review → ready to merge). Filter by health, repo, or role.
 
 **Big work, many PRs.** One task can hold a whole initiative — a base PR, stacked PRs on top of it, and a docs PR — each with its own target branch, review state, and merge order:
 
@@ -35,16 +37,29 @@ A few more nice things:
 
 ## Set it up locally
 
-You need two things:
+You need **Node.js 20 or newer** — [download here](https://nodejs.org).
 
-1. **Node.js 20 or newer** — [download here](https://nodejs.org)
-2. **GitHub CLI** (only needed for PR sync) — [install here](https://cli.github.com), then log in once with:
+Then pick one of two ways to connect GitHub (only needed for live PR status; everything else works without either):
+
+### Option A: with `gh` (zero config)
+
+If you already use the [GitHub CLI](https://cli.github.com), log in once:
 
 ```bash
 gh auth login
 ```
 
-Then run:
+### Option B: with a Personal Access Token (no `gh` needed)
+
+If you don't want to install `gh`, use a Personal Access Token instead — you'll paste it into Deck after it's running (see below). To make one:
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**.
+2. Give it the **`repo`** scope (that's the only one Deck needs).
+3. Copy it.
+
+The token lives only in your browser's localStorage and is sent to your own local Deck server per sync. Nothing is stored server-side.
+
+### Run it
 
 ```bash
 git clone https://github.com/abhilashdvs/deck-next.git
@@ -53,9 +68,14 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:3000** — that's it. Click **+ new** to add your first task, then paste a PR URL into it.
+Open **http://localhost:3000** — that's it.
 
-> Don't use GitHub, or not logged into `gh`? Everything still works — you just won't get live PR status.
+- If you chose **Option A**, you're done — sync just works.
+- If you chose **Option B**, click the **gear icon** (top right) and paste your token into the settings popover. Hit **Save** (or **Test** to verify it first).
+
+Click **+ new** to add your first task, then paste a PR URL into it. Or open the **PRs** tab and hit **sync** to pull in all your open PRs.
+
+> Don't connect GitHub at all? Everything still works — you just won't get live PR status.
 
 ### Optional: PR shorthand
 
