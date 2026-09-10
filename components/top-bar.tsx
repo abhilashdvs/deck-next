@@ -9,13 +9,18 @@ import { FilterBar } from "@/components/filters/filter-bar";
 import { NewItemDialog } from "@/components/modals/new-item-dialog";
 import { Button } from "@/components/ui/button";
 import type { ItemFilters } from "@/lib/types";
+import type { View } from "./app-shell";
 
 export function TopBar({
   filters,
   setFilters,
+  view,
+  onViewChange,
 }: {
   filters: ItemFilters;
   setFilters: (f: ItemFilters) => void;
+  view: View;
+  onViewChange: (v: View) => void;
 }) {
   const { mutate } = useSWRConfig();
   const revalidate = () =>
@@ -47,6 +52,21 @@ export function TopBar({
           className="h-8 w-[260px] rounded-md border border-hairline bg-card pl-6 pr-3 text-[12.5px] text-foreground outline-none transition-all duration-200 placeholder:text-text-faint focus:w-[300px] focus:border-primary/60 focus:shadow-[0_0_0_3px_var(--accent-tint)]"
         />
       </div>
+
+      {/* view switch */}
+      <nav className="ml-2 flex items-center gap-0.5 text-[12.5px]">
+        {(["board", "prs"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => onViewChange(v)}
+            className={`rounded-md px-2.5 py-1 capitalize transition ${
+              view === v ? "bg-accent-tint text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {v === "prs" ? "PRs" : "Board"}
+          </button>
+        ))}
+      </nav>
 
       <div className="flex-1" />
 

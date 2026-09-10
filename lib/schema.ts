@@ -80,3 +80,29 @@ export const activity = sqliteTable(
   },
   (t) => [index("idx_activity_item").on(t.itemId)],
 );
+
+// PRs the user authored or is reviewing, across every repo — populated by the
+// "my PRs" sync (`gh search prs`). Not linked to work items: this table backs
+// the PRs tab, which is a flat inbox, not a task board.
+export const myPrs = sqliteTable(
+  "my_prs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    externalId: text("external_id").notNull(),
+    repo: text("repo").notNull(),
+    number: integer("number").notNull(),
+    title: text("title").notNull(),
+    url: text("url").notNull(),
+    state: text("state").notNull(),
+    isDraft: integer("is_draft").notNull().default(0),
+    role: text("role").notNull().default("author"),
+    reviewDecision: text("review_decision"),
+    mergeable: text("mergeable"),
+    commentsCount: integer("comments_count"),
+    unresolvedThreads: integer("unresolved_threads"),
+    checks: text("checks"),
+    updatedAt: text("updated_at").notNull(),
+    lastSyncedAt: text("last_synced_at").notNull(),
+  },
+  (t) => [uniqueIndex("idx_my_prs_dedup").on(t.externalId)],
+);
