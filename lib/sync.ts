@@ -5,6 +5,7 @@ import { allGithubSources } from "@/lib/model/sources";
 import { importSources } from "@/lib/model/import";
 import type { ImportRecord, PrChecks } from "@/lib/types";
 import { prUrlFor } from "@/lib/pr";
+import { ghCliClient, type GitHubClient } from "@/lib/github-client";
 
 const execFileP = promisify(execFile);
 
@@ -89,49 +90,54 @@ export function normalizeChecks(nodes: RollupNode[] | null | undefined): PrCheck
   return out;
 }
 
-// One GraphQL call per PR returning both unresolved review threads and the
-// latest commit's required-check rollup. `isRequired` is the authoritative
-// signal — the branch-protection REST endpoint needs admin and 404s here.
+// One GraphQL call per PR returning unresolved review threads, the review
+// decision, and the latest commit's required-check rollup. `isRequired` is the
+// authoritative signal — the branch-protection REST endpoint needs admin and
+// 404s here.
 async function ghPrDetails(
+  client: GitHubClient,
   owner: string,
   repo: string,
   number: number,
-): Promise<{ unresolvedThreads: number; checks: PrChecks | null }> {
+): Promise<{ unresolvedThreads: number; checks: PrChecks | null; review: string | null }> {
   try {
     const query =
       "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){" +
+      "reviewDecision " +
       "reviewThreads(first:100){nodes{isResolved}}" +
       "commits(last:1){nodes{commit{statusCheckRollup{contexts(first:100){nodes{__typename" +
       " ... on CheckRun{name status conclusion detailsUrl isRequired(pullRequestNumber:$n)}" +
       " ... on StatusContext{context state targetUrl isRequired(pullRequestNumber:$n)}" +
       "}}}}}}" +
       "}}}";
-    const { stdout } = await execFileP("gh", [
-      "api",
-      "graphql",
-      "-f",
-      `query=${query}`,
-      "-F",
-      `o=${owner}`,
-      "-F",
-      `r=${repo}`,
-      "-F",
-      `n=${number}`,
-    ]);
-    const pr = JSON.parse(stdout)?.data?.repository?.pullRequest;
+    // The shape mirrors the hand-written query above; left loosely typed
+    // because the value is defended by the ?? [] fallbacks, exactly as the
+    // pre-client JSON.parse version was.
+    const data = (await client.graphql(query, { o: owner, r: repo, n: number })) as {
+      repository?: {
+        pullRequest?: {
+          reviewDecision?: string | null;
+          reviewThreads?: { nodes?: { isResolved: boolean }[] };
+          commits?: { nodes?: { commit?: { statusCheckRollup?: { contexts?: { nodes?: RollupNode[] } } } }[] };
+        };
+      };
+    };
+    const pr = data?.repository?.pullRequest;
     const threads: { isResolved: boolean }[] = pr?.reviewThreads?.nodes ?? [];
     const nodes: RollupNode[] = pr?.commits?.nodes?.[0]?.commit?.statusCheckRollup?.contexts?.nodes ?? [];
     return {
       unresolvedThreads: threads.filter((t) => t.isResolved === false).length,
       checks: normalizeChecks(nodes),
+      review: pr?.reviewDecision ? String(pr.reviewDecision).toLowerCase() : null,
     };
   } catch {
-    return { unresolvedThreads: 0, checks: null };
+    return { unresolvedThreads: 0, checks: null, review: null };
   }
 }
 
 export async function syncGithub(
   db: DrizzleDb,
+  client: GitHubClient = ghCliClient(),
 ): Promise<{ synced: number; updated: number; results: { externalId: string; state: string }[] }> {
   const prs = allGithubSources(db);
   const records: ImportRecord[] = [];
@@ -143,20 +149,12 @@ export async function syncGithub(
       const url = p.url || (p.repo && p.number ? prUrlFor(p.repo, p.number) : "");
       if (!url) return;
       try {
-        const { stdout } = await execFileP("gh", [
-          "pr",
-          "view",
-          url,
-          "--json",
-          "state,isDraft,mergedAt,reviewDecision,mergeable,comments,reviews",
-        ]);
-        const d = JSON.parse(stdout);
-        const n = normalizePr(d);
-        const review = (d.reviewDecision ?? "").toLowerCase();
         const m = /github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/.exec(url);
-        const { unresolvedThreads, checks } = m
-          ? await ghPrDetails(m[1], m[2], Number(m[3]))
-          : { unresolvedThreads: 0, checks: null };
+        if (!m) throw new Error("unparseable url");
+        const [owner, repo, numStr] = [m[1], m[2], m[3]];
+        const d = await client.prView(owner, repo, Number(numStr));
+        const n = normalizePr(d);
+        const { unresolvedThreads, checks, review } = await ghPrDetails(client, owner, repo, Number(numStr));
         records.push({
           kind: "github_pr",
           externalId: p.externalId,

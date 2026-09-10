@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gh } from "@/lib/gh";
 import { extractErrors } from "@/lib/job-log";
 import { isSafeName, isSafeId } from "../validate";
+import { resolveClient } from "@/lib/github-client";
 
 // Job logs are unbounded; execFile's 1MB default maxBuffer would error out on a
 // verbose job rather than fail diagnosably.
@@ -15,8 +15,10 @@ export async function GET(req: NextRequest) {
   if (!isSafeName(owner) || !isSafeName(repo) || !isSafeId(jobId)) {
     return NextResponse.json({ error: "invalid params" }, { status: 400 });
   }
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || null;
+  const client = resolveClient(token);
   try {
-    const log = await gh(["api", `repos/${owner}/${repo}/actions/jobs/${jobId}/logs`], { maxBuffer: LOG_MAX_BUFFER });
+    const log = await client.restText(`repos/${owner}/${repo}/actions/jobs/${jobId}/logs`, { maxBuffer: LOG_MAX_BUFFER });
     return NextResponse.json(extractErrors(log));
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 502 });

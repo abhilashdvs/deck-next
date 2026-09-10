@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gh } from "@/lib/gh";
 import { isSafeName, isSafeId } from "../validate";
+import { resolveClient } from "@/lib/github-client";
 
 type Body = {
   owner?: string;
@@ -29,8 +29,10 @@ export async function POST(req: NextRequest) {
   }
   const path = rerunPath(b);
   if (!path) return NextResponse.json({ error: "invalid scope" }, { status: 400 });
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || null;
+  const client = resolveClient(token);
   try {
-    await gh(["api", "-X", "POST", path]);
+    await client.restPost(path);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 502 });

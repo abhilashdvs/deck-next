@@ -8,6 +8,7 @@ import { Board } from "./board/board";
 import { MyPrsView } from "@/components/my-prs/my-prs-view";
 import { DetailSheet } from "@/components/detail/detail-sheet";
 import { CommandPalette } from "@/components/command/command-palette";
+import { authHeaders } from "@/lib/pat";
 
 export type View = "board" | "prs";
 
@@ -23,7 +24,7 @@ export function AppShell() {
     if (prsSyncing) return;
     setPrsSyncing(true);
     try {
-      await fetch("/api/my-prs/sync", { method: "POST" });
+      await fetch("/api/my-prs/sync", { method: "POST", headers: authHeaders() });
       mutate("/api/my-prs");
     } finally {
       setPrsSyncing(false);

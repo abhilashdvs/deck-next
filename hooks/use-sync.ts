@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { authHeaders } from "@/lib/pat";
 
 export function useSync(onDone: () => void) {
   const [syncing, setSyncing] = useState(false);
@@ -13,7 +14,7 @@ export function useSync(onDone: () => void) {
     syncingRef.current = true;
     setSyncing(true);
     try {
-      await fetch("/api/sync", { method: "POST" });
+      await fetch("/api/sync", { method: "POST", headers: authHeaders() });
       onDoneRef.current();
     } catch {
       // ignore; board keeps polling

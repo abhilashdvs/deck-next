@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight, ChevronDown, ExternalLink, RotateCw } from "lucide-react";
 import { parseActionsUrl } from "@/lib/actions-url";
 import { useRun, useJobErrors } from "@/hooks/use-run";
+import { authHeaders } from "@/lib/pat";
 
 type Scope = "job" | "run-failed" | "run-all";
 
@@ -126,7 +127,7 @@ function FailingCheck({ check }: { check: { name: string; url: string | null } }
     try {
       const r = await fetch("/api/actions/rerun", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...authHeaders() },
         body: JSON.stringify(body),
       });
       // A rejected re-run (no write access, run too old) is silent otherwise:

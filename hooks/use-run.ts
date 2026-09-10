@@ -3,13 +3,14 @@
 import useSWR from "swr";
 import type { ActionsRef } from "@/lib/actions-url";
 import type { RunDetail } from "@/lib/actions";
+import { authHeaders } from "@/lib/pat";
 
 // fetch() resolves on any status, so an unchecked r.json() would parse both
 // routes' 400/502 error bodies as success — leaving `run` a truthy {error}
 // object that never trips the caller's "couldn't load" branch. Throwing here is
 // what makes `run === undefined` actually mean "failed".
 const fetcher = async <T,>(u: string): Promise<T> => {
-  const r = await fetch(u);
+  const r = await fetch(u, { headers: authHeaders() });
   if (!r.ok) throw new Error(`${u} → ${r.status}`);
   return r.json();
 };
