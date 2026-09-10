@@ -68,7 +68,7 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:3000** — that's it.
+Open **http://localhost:9030** — that's it.
 
 - If you chose **Option A**, you're done — sync just works.
 - If you chose **Option B**, click the **gear icon** (top right) and paste your token into the settings popover. Hit **Save** (or **Test** to verify it first).
@@ -89,7 +89,7 @@ echo 'NEXT_PUBLIC_GITHUB_ORG=your-github-org' > .env.local
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Start the app at `localhost:3000` |
+| `npm run dev` | Start the app at `localhost:9030` |
 | `npm test` | Run the test suite |
 | `npm run build` | Production build |
 
