@@ -48,6 +48,7 @@ describe("useRun", () => {
     await waitFor(() => expect(result.current.run).toEqual(RUN));
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/actions/run?owner=acme&repo=magic-onboarding&runId=29325766675",
+      expect.anything(),
     );
   });
 
@@ -92,6 +93,7 @@ describe("useJobErrors", () => {
     expect(result.current.failed).toBe(false);
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/actions/errors?owner=acme&repo=magic-onboarding&jobId=87061580817",
+      expect.anything(),
     );
   });
 

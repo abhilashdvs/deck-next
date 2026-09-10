@@ -7,6 +7,7 @@ import { useSync } from "@/hooks/use-sync";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { NewItemDialog } from "@/components/modals/new-item-dialog";
+import { PatSettings } from "@/components/settings/pat-settings";
 import { Button } from "@/components/ui/button";
 import type { ItemFilters } from "@/lib/types";
 import type { View } from "./app-shell";
@@ -107,6 +108,7 @@ export function TopBar({
       </Button>
       <FilterBar filters={filters} setFilters={setFilters} />
       <NewItemDialog onCreated={revalidate} />
+      <PatSettings />
       <ThemePicker />
     </header>
   );
